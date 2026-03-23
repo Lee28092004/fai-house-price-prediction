@@ -1,4 +1,6 @@
 {
+    "problem_type": "regression",
+    "metric_note": "This project predicts continuous house prices, so MAE, RMSE, R2, and MAPE are used instead of Precision, Recall, and F1-score.",
     "random_forest": {
         "best_params": {
             "max_depth": null,
