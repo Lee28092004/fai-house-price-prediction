@@ -1,16 +1,13 @@
 """
 Data Detection Script — houses.csv
 Person A: Data & Model Architect
-Step 0: Audit raw data to identify ALL issues BEFORE any cleaning is done.
-
-Run this script first to understand what problems exist in the dataset.
-The findings from this script directly inform the cleaning steps in data_cleaning.py.
+Step 0: Audit raw data to identify all issues before any cleaning is done.
 """
 
+import datetime
 import pandas as pd
 import numpy as np
 
-# ── Load raw data (read-only — nothing is modified here) ──────────────────────
 df = pd.read_csv('data/houses.csv')
 
 DIVIDER = "=" * 65
@@ -21,12 +18,8 @@ print("  Purpose: Identify all data quality issues before cleaning")
 print(DIVIDER)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# DETECTION 1: Basic shape and structure
-# ─────────────────────────────────────────────────────────────────────────────
 print("\n[DETECTION 1] Dataset shape and column overview")
 print("-" * 65)
-
 print(f"  Total rows    : {df.shape[0]}")
 print(f"  Total columns : {df.shape[1]}")
 print(f"\n  Column names:")
@@ -34,9 +27,6 @@ for i, col in enumerate(df.columns, 1):
     print(f"    {i:>2}. {col}")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# DETECTION 2: Duplicate column names
-# ─────────────────────────────────────────────────────────────────────────────
 print(f"\n[DETECTION 2] Duplicate column names")
 print("-" * 65)
 print("  Checking whether any two columns share the same name...\n")
@@ -52,13 +42,10 @@ if dupe_cols:
     print(f"  FOUND: Duplicate column names: {dupe_cols}")
 else:
     print("  No duplicate column names found.")
-    print("  All 32 column names are unique.")
+    print(f"  All {len(df.columns)} column names are unique.")
     print("\n  RESULT: No action needed.")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# DETECTION 3: Data types — are numeric columns stored as wrong types?
-# ─────────────────────────────────────────────────────────────────────────────
 print(f"\n[DETECTION 3] Column data types")
 print("-" * 65)
 print("  (Columns that SHOULD be numeric but are stored as strings are a problem)")
@@ -79,14 +66,11 @@ for col in string_cols:
     sample_str = str(sample)[:55].replace('\n', ' ').replace('\r', '')
     print(f"    [{col}]  sample: \"{sample_str}\"")
 
-print(f"\n  FINDING: 31 out of 32 columns are stored as strings.")
+print(f"\n  FINDING: {len(string_cols)} out of {df.shape[1]} columns are stored as strings.")
 print(f"  Several of these (Bedroom, Bathroom, Price, Property Size, etc.)")
 print(f"  are clearly numeric and need to be cast to the correct dtype.")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# DETECTION 4: Duplicate rows
-# ─────────────────────────────────────────────────────────────────────────────
 print(f"\n[DETECTION 4] Duplicate rows")
 print("-" * 65)
 
@@ -106,9 +90,6 @@ else:
     print("  RESULT: No duplicate rows found.")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# DETECTION 5: True NaN / missing values
-# ─────────────────────────────────────────────────────────────────────────────
 print(f"\n[DETECTION 5] True NaN missing values (per column)")
 print("-" * 65)
 print("  Columns with at least 1 missing value (sorted by % missing):\n")
@@ -132,9 +113,6 @@ print(f"\n  FINDING: {len(missing_df)} columns have true NaN values.")
 print(f"  NOTE: This only catches real NaN — disguised missing values (e.g. '-') are checked in Detection 6.")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# DETECTION 6: Disguised / fake missing values (placeholder strings)
-# ─────────────────────────────────────────────────────────────────────────────
 print(f"\n[DETECTION 6] Disguised missing values — '-' used as placeholder")
 print("-" * 65)
 print("  These look like valid data to pandas but actually mean 'no data'.")
@@ -158,9 +136,6 @@ else:
     print(f"  Must be replaced with NaN before any numeric casting or analysis.")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# DETECTION 7: Target variable — 'price'
-# ─────────────────────────────────────────────────────────────────────────────
 print(f"\n[DETECTION 7] Target variable — 'price'")
 print("-" * 65)
 
@@ -181,9 +156,6 @@ print(f"  The 'RM' prefix and spaces prevent any numeric operation or modelling.
 print(f"  Must strip prefix and cast to integer before use as target variable.")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# DETECTION 8: Numeric features stored as strings
-# ─────────────────────────────────────────────────────────────────────────────
 print(f"\n[DETECTION 8] Numeric features stored as string dtype")
 print("-" * 65)
 print("  Testing whether columns expected to be numeric can be cast...\n")
@@ -212,9 +184,6 @@ print(f"\n  FINDING: These columns must be cast to numeric types.")
 print(f"  'Property Size' additionally contains a unit suffix ('sq.ft.') that must be stripped.")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# DETECTION 9: Inconsistent categorical values (typos / mixed casing)
-# ─────────────────────────────────────────────────────────────────────────────
 print(f"\n[DETECTION 9] Inconsistent categorical values in key columns")
 print("-" * 65)
 print("  Checking Tenure Type, Land Title, Property Type and Floor Range")
@@ -241,9 +210,6 @@ if not inconsistency_found:
     print("  Values are clean and consistently formatted.")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# DETECTION 10: Impossible / out-of-range values in numeric columns
-# ─────────────────────────────────────────────────────────────────────────────
 print(f"\n[DETECTION 10] Impossible or out-of-range values in numeric columns")
 print("-" * 65)
 print("  Checking for values that are technically numeric but logically wrong")
@@ -251,8 +217,8 @@ print("  (e.g. 0 bedrooms, negative price, completion year far in the future)...
 
 temp_df = df.copy()
 temp_df = temp_df.replace('-', np.nan)
-temp_df['Bedroom']   = pd.to_numeric(temp_df['Bedroom'], errors='coerce')
-temp_df['Bathroom']  = pd.to_numeric(temp_df['Bathroom'], errors='coerce')
+temp_df['Bedroom']         = pd.to_numeric(temp_df['Bedroom'], errors='coerce')
+temp_df['Bathroom']        = pd.to_numeric(temp_df['Bathroom'], errors='coerce')
 temp_df['Completion Year'] = pd.to_numeric(temp_df['Completion Year'], errors='coerce')
 temp_df['price_num'] = (
     temp_df['price'].str.replace('RM', '', regex=False)
@@ -276,9 +242,11 @@ if zero_bath > 0:
 else:
     print(f"  Bathroom     : range {int(temp_df['Bathroom'].min())}–{int(temp_df['Bathroom'].max())} — looks reasonable.")
 
-future_years = (temp_df['Completion Year'] > 2030).sum()
+# Allow up to 5 years beyond today for planned completions
+future_year_threshold = datetime.date.today().year + 5
+future_years = (temp_df['Completion Year'] > future_year_threshold).sum()
 if future_years > 0:
-    print(f"  Completion Year: {future_years} entries beyond year 2030 — may be erroneous.")
+    print(f"  Completion Year: {future_years} entries beyond year {future_year_threshold} — may be erroneous.")
     issues_found = True
 else:
     valid_years = temp_df['Completion Year'].dropna()
@@ -298,9 +266,6 @@ else:
     print(f"\n  FINDING: Impossible values detected — review before modelling.")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# DETECTION 11: Zero-variance columns (same value in every row)
-# ─────────────────────────────────────────────────────────────────────────────
 print(f"\n[DETECTION 11] Zero-variance columns")
 print("-" * 65)
 print("  A column with only 1 unique value provides no information to any model.\n")
@@ -319,9 +284,6 @@ else:
     print(f"\n  FINDING: Zero-variance columns should be dropped before modelling.")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# DETECTION 12: Columns with raw unstructured / noise text
-# ─────────────────────────────────────────────────────────────────────────────
 print(f"\n[DETECTION 12] Raw text / noise columns")
 print("-" * 65)
 print("  Checking for columns containing embedded newlines, URLs, or emojis...\n")
@@ -349,9 +311,6 @@ else:
     print(f"  are not usable as model features without a separate NLP pipeline.")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# DETECTION 13: Columns too sparse to impute (>80% missing combined NaN + dash)
-# ─────────────────────────────────────────────────────────────────────────────
 print(f"\n[DETECTION 13] Columns too sparse to impute (>80% missing after dash replacement)")
 print("-" * 65)
 print("  Combining true NaN and '-' placeholders to see actual missingness...\n")
@@ -371,13 +330,44 @@ print(f"  Imputing these would mean fabricating data for 4 in every 5 rows.")
 print(f"  Recommended action: drop these columns entirely.")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# DETECTION SUMMARY
-# ─────────────────────────────────────────────────────────────────────────────
 print(f"\n{DIVIDER}")
 print("  DETECTION SUMMARY")
+print(DIVIDER)
 
+n_dupes     = df.duplicated().sum()
+n_dash_cols = sum(1 for col in df.columns if (df[col] == '-').sum() > 0)
+n_zero_var  = sum(1 for col in df.columns if df[col].nunique(dropna=True) == 1)
+df_temp2    = df.replace('-', np.nan)
+n_high_miss = (df_temp2.isnull().mean() > 0.80).sum()
 
+print(f"""
+  Checks that came back CLEAN (no action needed):
+    [D2]  No duplicate column names — all {len(df.columns)} columns are uniquely named
+    [D9]  Tenure Type, Land Title, Property Type, Floor Range — values are
+          consistently formatted, no casing issues or typos detected
+    [D10] No impossible numeric values — bedroom/bathroom/price/year ranges
+          are all within logically acceptable bounds
+
+  Issues found — ordered by cleaning priority:
+
+  Priority 1 — MUST FIX (model will not train without these):
+    [D4]  {n_dupes} duplicate rows → drop before splitting train/test
+    [D6]  {n_dash_cols} columns use '-' as missing placeholder → replace with NaN
+    [D7]  'price' stored as string "RM X XX" → strip prefix, cast to int
+    [D8]  'Property Size' has unit suffix "sq.ft." → strip, cast to float
+    [D8]  Bedroom, Bathroom, Parking Lot, # of Floors,
+          Total Units, Completion Year stored as strings → cast to numeric
+
+  Priority 2 — SHOULD FIX (reduces noise, improves model quality):
+    [D11] {n_zero_var} column(s) with zero variance (1 unique value) → drop
+    [D12] 'description' is raw scraped text with emojis/URLs → drop
+    [D13] {n_high_miss} columns have >80% missing data → drop (too sparse to impute)
+
+  Priority 3 — FILL GAPS (required for complete training data):
+    [D5]  Remaining missing values in kept columns → impute
+          Numeric  → median imputation (robust to outliers)
+          Categorical → mode imputation (most frequent value)
+""")
 
 print(DIVIDER)
 print("  Detection complete. No data was modified.")

@@ -194,11 +194,10 @@ print(f"  optimisation to improve both models before final evaluation.\n")
 
 
 # ── Save models ────────────────────────────────────────────────────────────────
-with open('data/rf_model_baseline.pkl', 'wb') as f:
+with open('model/rf_model_baseline.pkl', 'wb') as f:
     pickle.dump(rf_model, f)
 
-xgb_model.save_model('data/xgb_model_baseline.json')
+xgb_model.save_model('model/xgb_model_baseline.json')
 
-print(f"Saved: data/rf_model_baseline.pkl")
-print(f"Saved: data/xgb_model_baseline.json")
-print(f"Next : Person B runs hyperparameter_tuning.py")
+print(f"Saved: model/rf_model_baseline.pkl")
+print(f"Saved: model/xgb_model_baseline.json")

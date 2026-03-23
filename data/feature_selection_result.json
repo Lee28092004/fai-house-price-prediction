@@ -1,0 +1,29 @@
+{
+  "selected_numeric": [
+    "Bedroom",
+    "Bathroom",
+    "Property Size",
+    "Completion Year",
+    "# of Floors",
+    "Total Units",
+    "Parking Lot"
+  ],
+  "selected_categorical": [
+    "Tenure Type",
+    "Property Type",
+    "Land Title"
+  ],
+  "dropped": [
+    "Floor Range",
+    "Ad List",
+    "Building Name",
+    "Developer",
+    "Address",
+    "Firm Type",
+    "Firm Number",
+    "REN Number",
+    "Park",
+    "School",
+    "Facilities"
+  ]
+}

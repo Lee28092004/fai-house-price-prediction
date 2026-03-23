@@ -162,4 +162,3 @@ out['price'] = y.values
 out.to_csv('data/houses_engineered.csv', index=False)
 
 print(f"Saved: X_train ({X_train.shape}), X_test ({X_test.shape}), y_train, y_test, houses_engineered")
-print(f"Next : run model_training.py")
