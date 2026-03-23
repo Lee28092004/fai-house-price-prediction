@@ -3,13 +3,7 @@ import json
 import pickle
 import random
 import pandas as pd
-
-XGB_AVAILABLE = True
-try:
-    from xgboost import XGBRegressor
-except ImportError:
-    XGB_AVAILABLE = False
-
+from xgboost import XGBRegressor
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "..", "data")
@@ -32,18 +26,18 @@ best_model_name = "random_forest" if rf_r2 >= xgb_r2 else "xgboost"
 sample_index = random.randint(0, len(X_test) - 1)
 sample_input = X_test.iloc[[sample_index]]
 
-if best_model_name == "random_forest":
-    with open(os.path.join(MODEL_DIR, "best_random_forest.pkl"), "rb") as f:
-        model = pickle.load(f)
-    prediction = model.predict(sample_input)[0]
+# Load Random Forest
+with open(os.path.join(MODEL_DIR, "best_random_forest.pkl"), "rb") as f:
+    rf_model = pickle.load(f)
 
-elif best_model_name == "xgboost" and XGB_AVAILABLE:
-    model = XGBRegressor()
-    model.load_model(os.path.join(MODEL_DIR, "best_xgboost.json"))
-    prediction = model.predict(sample_input)[0]
+rf_prediction = rf_model.predict(sample_input)[0]
 
-else:
-    raise RuntimeError("Best model could not be loaded.")
+# Load XGBoost if available in summary
+xgb_prediction = None
+if "xgboost" in summary:
+    xgb_model = XGBRegressor()
+    xgb_model.load_model(os.path.join(MODEL_DIR, "best_xgboost.json"))
+    xgb_prediction = xgb_model.predict(sample_input)[0]
 
 
 def format_value(value):
@@ -52,11 +46,15 @@ def format_value(value):
     return str(value)
 
 
-def print_box_line(width=62):
+def print_box_line(width=64):
     print("=" * width)
 
 
-def print_section_title(title, width=62):
+def print_sub_line(width=64):
+    print("-" * width)
+
+
+def print_section_title(title, width=64):
     print_box_line(width)
     print(title.center(width))
     print_box_line(width)
@@ -64,19 +62,40 @@ def print_section_title(title, width=62):
 
 def print_features_nicely(row_df):
     row = row_df.iloc[0].to_dict()
-    feature_items = list(row.items())
 
     print("\nINPUT FEATURES")
-    print("-" * 62)
+    print_sub_line()
 
-    for feature, value in feature_items:
-        print(f"{feature:<24} : {format_value(value)}")
+    active_states = []
+    normal_features = []
+
+    for feature, value in row.items():
+        if feature.startswith("State_"):
+            if value is True or value == 1:
+                active_states.append(feature.replace("State_", ""))
+        else:
+            normal_features.append((feature, value))
+
+    for feature, value in normal_features:
+        print(f"{feature:<26} : {format_value(value)}")
+
+    if active_states:
+        print(f"{'Active State':<26} : {', '.join(active_states)}")
 
 
 print_section_title("PERSON B DEMO SCRIPT")
-print(f"Selected Best Model     : {best_model_name}")
-print(f"Random Test Row Index   : {sample_index}")
-print(f"Predicted House Price   : RM {prediction:,.2f}")
+print(f"Random Test Row Index      : {sample_index}")
+
+print("\nMODEL PREDICTIONS")
+print_sub_line()
+print(f"Random Forest Prediction   : RM {rf_prediction:,.2f}")
+
+if xgb_prediction is not None:
+    print(f"XGBoost Prediction         : RM {xgb_prediction:,.2f}")
+
+print("\nBEST MODEL SELECTED")
+print_sub_line()
+print(f"{best_model_name}")
 
 print_features_nicely(sample_input)
 
