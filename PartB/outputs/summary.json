@@ -1,0 +1,16 @@
+{
+    "random_forest": {
+        "best_params": {
+            "max_depth": null,
+            "min_samples_split": 2,
+            "n_estimators": 100
+        },
+        "best_cv_score_r2": 0.6659836547358354,
+        "test_metrics": {
+            "MAE": 80443.80284562183,
+            "RMSE": 209217.09483588982,
+            "R2": 0.6998356403590658,
+            "MAPE": 20.510007560675454
+        }
+    }
+}
