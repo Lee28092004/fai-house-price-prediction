@@ -189,7 +189,7 @@ print(f"  {'R²':<10}     {rf_test_metrics['r2']:>13.4f}     {xgb_test_metrics['
 
 better = "XGBoost" if xgb_test_metrics['r2'] > rf_test_metrics['r2'] else "Random Forest"
 print(f"\n  Higher R² at baseline: {better}")
-print(f"  Note: these are pre-tuning scores. Person B will run hyperparameter")
+print(f"  Note: these are pre-tuning scores.")
 print(f"  optimisation to improve both models before final evaluation.\n")
 
 
