@@ -334,41 +334,92 @@ print(f"\n{DIVIDER}")
 print("  DETECTION SUMMARY")
 print(DIVIDER)
 
-n_dupes     = df.duplicated().sum()
-n_dash_cols = sum(1 for col in df.columns if (df[col] == '-').sum() > 0)
-n_zero_var  = sum(1 for col in df.columns if df[col].nunique(dropna=True) == 1)
-df_temp2    = df.replace('-', np.nan)
-n_high_miss = (df_temp2.isnull().mean() > 0.80).sum()
+# ── Build clean list from detection variables already computed above ──────────
+clean_items = []
+issues_items = []
 
-print(f"""
-  Checks that came back CLEAN (no action needed):
-    [D2]  No duplicate column names — all {len(df.columns)} columns are uniquely named
-    [D9]  Tenure Type, Land Title, Property Type, Floor Range — values are
-          consistently formatted, no casing issues or typos detected
-    [D10] No impossible numeric values — bedroom/bathroom/price/year ranges
-          are all within logically acceptable bounds
+# D2: duplicate column names
+if not dupe_cols:
+    clean_items.append(f"[D2]  No duplicate column names — all {len(df.columns)} columns are uniquely named")
+else:
+    issues_items.append(f"[D2]  {len(dupe_cols)} duplicate column name(s) found: {dupe_cols}")
 
-  Issues found — ordered by cleaning priority:
+# D9: categorical consistency
+if not inconsistency_found:
+    clean_items.append("[D9]  Tenure Type, Land Title, Property Type, Floor Range — no casing or typo issues")
+else:
+    issues_items.append("[D9]  Inconsistent casing/typos found in categorical columns — standardise before encoding")
 
-  Priority 1 — MUST FIX (model will not train without these):
-    [D4]  {n_dupes} duplicate rows → drop before splitting train/test
-    [D6]  {n_dash_cols} columns use '-' as missing placeholder → replace with NaN
-    [D7]  'price' stored as string "RM X XX" → strip prefix, cast to int
-    [D8]  'Property Size' has unit suffix "sq.ft." → strip, cast to float
-    [D8]  Bedroom, Bathroom, Parking Lot, # of Floors,
-          Total Units, Completion Year stored as strings → cast to numeric
+# D10: impossible numeric values
+if not issues_found:
+    clean_items.append("[D10] No impossible values — bedroom/bathroom/price/year ranges all logically acceptable")
+else:
+    issues_items.append("[D10] Impossible or out-of-range numeric values detected — review before modelling")
 
-  Priority 2 — SHOULD FIX (reduces noise, improves model quality):
-    [D11] {n_zero_var} column(s) with zero variance (1 unique value) → drop
-    [D12] 'description' is raw scraped text with emojis/URLs → drop
-    [D13] {n_high_miss} columns have >80% missing data → drop (too sparse to impute)
+# ── Build issues list from detection variables ────────────────────────────────
 
-  Priority 3 — FILL GAPS (required for complete training data):
-    [D5]  Remaining missing values in kept columns → impute
-          Numeric  → median imputation (robust to outliers)
-          Categorical → mode imputation (most frequent value)
-""")
+# D4: duplicate rows
+if total_dupes > 0:
+    issues_items.append(f"[D4]  {total_dupes} duplicate rows → drop before splitting train/test")
 
+# D5: true NaN missing values in remaining columns
+cols_with_nan = missing_df[missing_df['Missing %'] <= 80].index.tolist()
+if cols_with_nan:
+    issues_items.append(f"[D5]  {len(cols_with_nan)} column(s) have true NaN values → impute after cleaning")
+
+# D6: dash placeholders
+if dash_found:
+    n_dash_cols = sum(1 for col in df.columns if (df[col] == '-').sum() > 0)
+    issues_items.append(f"[D6]  {n_dash_cols} column(s) use '-' as missing placeholder → replace with NaN")
+
+# D7: price format
+try:
+    df['price'].str.replace('RM', '', regex=False).str.replace(' ', '', regex=False).astype(float)
+    price_is_string = True
+except Exception:
+    price_is_string = False
+if price_is_string:
+    issues_items.append("[D7]  'price' stored as string (e.g. 'RM 340 000') → strip prefix, cast to int")
+
+# D8: numeric columns stored as strings
+string_numeric_cols = [
+    col for col in suspect_cols
+    if str(df[col].dtype) in ('object', 'str') or df[col].dtype == object
+]
+if string_numeric_cols:
+    issues_items.append(f"[D8]  {len(string_numeric_cols)} numeric column(s) stored as strings: {string_numeric_cols} → cast to numeric")
+
+# D11: zero variance
+zero_var_cols = [col for col in df.columns if df[col].nunique(dropna=True) == 1]
+if zero_var_cols:
+    issues_items.append(f"[D11] {len(zero_var_cols)} zero-variance column(s): {zero_var_cols} → drop")
+
+# D12: noise columns
+if noise_found:
+    noisy_cols = [
+        col for col in str_cols
+        if any(ind in str(df[col].dropna().iloc[0]) for ind in noise_indicators)
+        if df[col].dropna().shape[0] > 0
+    ]
+    issues_items.append(f"[D12] {len(noisy_cols)} column(s) contain raw noise text (URLs/emojis/newlines) → drop")
+
+# D13: columns too sparse to impute
+if not high_missing.empty:
+    issues_items.append(f"[D13] {len(high_missing)} column(s) exceed 80% missing → drop (too sparse to impute)")
+
+# ── Print summary ─────────────────────────────────────────────────────────────
+print(f"\n  Checks that came back CLEAN ({len(clean_items)}):")
+for item in clean_items:
+    print(f"    {item}")
+
+print(f"\n  Issues found ({len(issues_items)}):")
+if issues_items:
+    for item in issues_items:
+        print(f"    {item}")
+else:
+    print("    None — dataset appears clean.")
+
+print()
 print(DIVIDER)
 print("  Detection complete. No data was modified.")
 print("  Proceed to data_cleaning.py to apply the fixes above.")

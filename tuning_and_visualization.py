@@ -46,9 +46,9 @@ MAE, RMSE, R², and MAPE are more appropriate for measuring regression quality.
 # PATH SETUP
 # =========================================================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE_DIR, "..", "data")
+DATA_DIR = os.path.join(BASE_DIR, "data")
 OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
-MODEL_DIR = os.path.join(BASE_DIR, "models")
+MODEL_DIR = os.path.join(BASE_DIR, "model")
 PLOT_DIR = os.path.join(OUTPUT_DIR, "plots")
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -201,18 +201,16 @@ def save_actual_vs_predicted_scatter(y_true, y_pred, model_name, filename):
 
 
 def save_actual_vs_predicted_line(y_true, y_pred, model_name, filename, n_points=100):
-    """Save a line plot of actual and predicted values for a limited sample window."""
+    """Save a line plot of actual and predicted values sorted by actual price."""
     plot_df = pd.DataFrame({
         "Actual": np.array(y_true),
         "Predicted": np.array(y_pred),
-    }).reset_index(drop=True)
-
-    plot_df = plot_df.iloc[:n_points]
+    }).sort_values("Actual").reset_index(drop=True).iloc[:n_points]
 
     plt.figure(figsize=(12, 6))
     plt.plot(plot_df.index, plot_df["Actual"], label="Actual")
     plt.plot(plot_df.index, plot_df["Predicted"], label="Predicted")
-    plt.xlabel("Test Sample Index")
+    plt.xlabel("Samples (sorted by actual price)")
     plt.ylabel("House Price")
     plt.title(f"Actual vs Predicted Line Graph — {model_name}")
     plt.legend()
@@ -433,7 +431,6 @@ def save_plot_captions_file():
 # TRAIN RANDOM FOREST
 # =========================================================
 rf_best, rf_best_params, rf_best_cv = tune_random_forest(X_train, y_train)
-rf_best.fit(X_train, y_train)
 rf_pred = rf_best.predict(X_test)
 rf_metrics = evaluate_regression(y_test, rf_pred, "Random Forest Tuned")
 
@@ -449,7 +446,6 @@ xgb_metrics = None
 
 if XGB_AVAILABLE:
     xgb_best, xgb_params, xgb_cv = tune_xgboost(X_train, y_train)
-    xgb_best.fit(X_train, y_train)
     xgb_pred = xgb_best.predict(X_test)
     xgb_metrics = evaluate_regression(y_test, xgb_pred, "XGBoost Tuned")
 else:
